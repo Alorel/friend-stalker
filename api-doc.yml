@@ -1,0 +1,196 @@
+User operations:
+  response_type: application/json
+  method: GET
+  auth: true
+  endpoints:
+    - url: /api/user
+      desc: Retrieve information about the logged in user
+      response:
+        - code: 200
+          desc: Success
+          body: A JSON object containing the user's name, last update time and last check-in location
+        - code: 401
+          desc: Authentication header missing
+        - code: 404
+          desc: User ID not found
+          body: The JSON-encoded string "User not found"
+    - url: /api/user/location
+      desc: Retrieve the logged in user's last known location
+      response:
+        - code: 200
+          desc: Success
+          body: A JSON object with the 'latitude' and 'longitude' keys if the user checked in at least once, JSON NULL otherwise
+        - code: 401
+          desc: Authentication header missing
+        - code: 404
+          desc: User ID not found
+          body: The JSON-encoded string "User not found"
+    - url: /api/user/location/{userID}
+      desc: Retrieve the specified user's last known location
+      auth: false
+      path:
+        userID: The target user
+      response:
+        - code: 200
+          desc: Success
+          body: A JSON object with the 'latitude' and 'longitude' keys if the user checked in at least once, JSON NULL otherwise
+        - code: 404
+          desc: User ID not found
+          body: The JSON-encoded string "User not found"
+    - url: /api/user/check-in?lat={lat}&long={long}
+      desc: Check in at the given latitude and longitude
+      method: PUT
+      required_query:
+        lat: The latitude
+        long: The longitude
+      response:
+        - code: 200
+          desc: Success
+          body: A JSON object with the 'latitude' and 'longitude' keys. The values are identical to the ones submitted.
+        - code: 400
+          desc: Latitude and/or longitude aren't valid Double values
+        - code: 401
+          desc: Authentication header missing
+        - code: 404
+          desc: lat/long query parameters missing
+        - code: 404
+          desc: User ID not found
+          body: The JSON-encoded string "User not found"
+    - url: /api/user/exists/{id}
+      auth: false
+      desc: Check if the user exists
+      path:
+        id: The user ID to check
+      response:
+        - code: 200
+          desc: Success
+          body: A JSON "true" if the user exists or a JSON "false" if they don't
+    - url: /api/user/{id}
+      method: POST
+      auth: false
+      desc: Create a user
+      path:
+        id: The user ID we're creating
+      response:
+        - code: 201
+          desc: User created
+        - code: 409
+          desc: User already exists
+Subscriptions:
+  response_type: text/plain
+  method: GET
+  auth: true
+  endpoints:
+    - url: /api/subscriptions/list-requests/incoming
+      desc: List incoming subscription requests for the logged in user
+      response_type: application/json
+      response:
+        - code: 200
+          desc: Success
+          body: An array of user IDs
+        - code: 401
+          desc: Authentication header missing
+        - code: 404
+          desc: User ID invalid
+          body: The JSON string "User doesn't exist"
+    - url: /api/subscriptions/request/{to}
+      method: DELETE
+      desc: Cancel a subscribtion request sent to the given user
+      path:
+        to: The ID of the user to whom the request was sent
+      response:
+        - code: 200
+          desc: Success
+        - code:
+            - 400
+            - 404
+          desc: Request parameter validation error
+          body: Error description
+        - code: 401
+          desc: Authentication header missing
+          body: User ID not provided
+        - code: 404
+          desc: Subscription request doesn't exist (e.g. already accepted/rejected)
+          body: The string "The subscription request doesn't exist"
+    - url: /api/subscriptions/list-requests/outgoing
+      desc: List outgoing subscription requests for the logged in user
+      response_type: application/json
+      response:
+        - code: 200
+          desc: Success
+          body: An array of user IDs who haven't responded to the user's subscription requests
+        - code: 401
+          desc: Authentication header missing
+          body: An empty array
+        - code: 404
+          desc: User ID invalid
+          body: The JSON string "User doesn't exist"
+    - url: /api/subscriptions/subscribe/{to}
+      desc: Send a subscription request
+      path:
+        to: Subscription request recipient
+      method: POST
+      response:
+        - code: 201
+          desc: Success
+        - code:
+            - 400
+            - 404
+          desc: Request parameter validation error
+          body: Error description
+        - code: 401
+          desc: Authentication header missing
+        - code: 409
+          desc: Conflict
+          body:
+            - 'One of the following:'
+            - '"Subscription request already exists"'
+            - '"Subscription already exists"'
+    - url: /api/subscriptions/respond/{id}
+      desc: Deny a subscription request
+      method: DELETE
+      path:
+        id: ID of the user who sent the request
+      response:
+        - code: 200
+          desc: Success
+        - code:
+            - 400
+            - 404
+          desc: Request parameter validation error
+          body: Error description
+        - code: 401
+          desc: Authentication header missing
+        - code: 404
+          desc: Subscription request not found (e.g. already accepted/rejected)
+          body: Subscription request not found
+    - url: /api/subscriptions/list-subscriptions
+      desc: Retrieve a list of users who have accepted the authenticated user's subscription requests
+      response_type: application/json
+      response:
+        - code: 200
+          desc: Success
+          body: An array of user objects. Each user object has the non-null keys "id" and
+                "lastUpdated", the latter mapping to a millisecond-precision UNIX timestamp. If
+                the "location" key's value is not null, it indicates the user's last known location
+                and contains the keys "latitude" and "longitude"
+        - code: 401
+          desc: Authentication header missing
+    - url: /api/subscriptions/respond/{id}
+      desc: Accept a subscription request
+      method: PATCH
+      path:
+        id: ID of the user who sent the request
+      response:
+        - code: 200
+          desc: Success
+        - code:
+            - 400
+            - 404
+          desc: Request parameter validation error
+          body: Error description
+        - code: 401
+          desc: Authentication header missing
+        - code: 404
+          desc: Subscription request not found (e.g. already accepted/rejected)
+          body: Subscription request not found

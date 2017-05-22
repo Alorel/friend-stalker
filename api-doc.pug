@@ -1,0 +1,108 @@
+- var colLeft = 'col-md-4 col-lg-2';
+- var colRight = 'col-md-8 col-lg-10';
+- var slugify = input => input.replace(/[\s\/]/g, '-').replace(/[^a-zA-Z0-9\-_]/g,'').toLowerCase();
+- var getVar = (name, main, defaults) => name in main ? main[name] : defaults[name];
+mixin keyvals(title, keyvals)
+  strong.show.text-center(style='margin-top: 10px')= title
+  each desc, param in keyvals
+    div
+      strong.small #{param}:
+      |
+      |
+      small= desc
+mixin ifarray(input)
+  if input !== null && input.constructor.name.toLowerCase() === "array"
+    ul.list-unstyled
+      each el in input
+        li= el
+  else
+    span= input
+doctype html
+html(lang='en', style='min-height: 100%')
+head
+  meta(charset='utf8')
+  meta(content='width=device-width,initial-scale=1', name='viewport')
+  title API docs
+  style!= css
+body(style='min-height: 100%')
+  .container-fluid(style={'min-height': '100%'})
+    .col-md-3.col-lg-2.hidden-sm.hidden-xs(style={
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        height: '100%',
+        'overflow-y': 'auto',
+        'overflow-x': 'auto'
+    })
+      each topCategory, topCategoryName in ymlSpec
+        h3.text-center
+          a(href= '#' + slugify('cat-' + topCategoryName))= topCategoryName
+        ul.list-unstyled
+          each endpoint in topCategory.endpoints
+            - var method = getVar('method', endpoint, topCategory);
+            li
+              a(href = '#' + slugify('end-' + method + endpoint.url)) #{method} #{endpoint.url}
+    .col-md-9.col-md-offset-3.col-lg-10.col-lg-offset-2
+      header
+        h1 Friend Stalker API documentation
+        hr
+      p.text-justify
+        span Authentication is simulated; in a real world application it would be a token header but here it's done by adding the
+        strong!= ' x-user '
+        span header containing the "authenticated" user's ID, e.g. to perform operations on behalf of the user
+        em!= ' foo '
+        span you would include the
+        em!= ' x-user: foo '
+        span header with your requests.
+      p.text-justify
+        span Any of the API calls below may produce a HTTP 500
+        em!= ' text/plain '
+        span response should an unexpected exception occur, e.g. a database server failure. The response body will hold the error description, if applicable.
+      each topCategory, topCategoryName in ymlSpec
+        h1(id= slugify('cat-' + topCategoryName))= topCategoryName
+        each endpoint in topCategory.endpoints
+          - var endpointResponseType = getVar('response_type', endpoint, topCategory);
+          - var method = getVar('method', endpoint, topCategory);
+          - var auth = getVar('auth', endpoint, topCategory);
+          .panel.panel-default(id= slugify('end-' + method + endpoint.url))
+            .panel-heading.clearfix
+              if auth
+                span.label.label-danger.pull-left Authentication Required
+              else
+                span.label.label-success.pull-left No Authentication
+              h3.panel-title.pull-right
+                strong= method
+                |
+                |
+                span=endpoint.url
+            .panel-body
+              div(class = colLeft)
+                span= endpoint.desc
+                if 'path' in endpoint
+                  +keyvals('Path Parameters', endpoint.path)
+                if 'required_query' in endpoint
+                  +keyvals('Query String', endpoint.required_query)
+              div(class = colRight)
+                h4 Response
+                table.table.table-condensed.table-hover.table-bordered
+                  thead
+                    tr
+                      th HTTP status
+                      th Format
+                      th Description
+                      th Body
+                  tbody
+                    each response in endpoint.response
+                      - var responseType = 'response_type' in response ? response.response_type : endpointResponseType;
+                      - var clazz = response.code.toString().charAt('0') === '2' ? 'success' : 'danger';
+                      tr(class = clazz)
+                        td
+                          +ifarray(response.code)
+                        td= response.body ? responseType || 'N/A' : 'N/A'
+                        td
+                          +ifarray(response.desc)
+                        td
+                          if response.body
+                            +ifarray(response.body)
+                          else
+                            span.label.label-default None
