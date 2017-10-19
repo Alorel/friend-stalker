@@ -1,5 +1,7 @@
 # Friend Stalker
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/Alorel/friend-stalker.svg)](https://greenkeeper.io/)
+
 A university assignment for a web service-oriented web app.
 
   - The frontend uses KnockoutJS, AMD and Bootstrap (the requirement was jQuery UI - managed to negotiate)
